@@ -39,6 +39,7 @@ def avg_return(history: pd.Series, timeperiod: int = 255) -> float:
     returns = history.pct_change().dropna()
     return (1 + returns.sum()) ** (timeperiod/returns.count()) - 1
 
+
 def avg_volatility(history: pd.Series, timeperiod: int = 255) -> float:
     """
     #### Description:
@@ -53,6 +54,7 @@ def avg_volatility(history: pd.Series, timeperiod: int = 255) -> float:
     """
     returns = history.pct_change(fill_method=None).dropna()
     return np.std(returns) * np.sqrt(timeperiod)
+
 
 def max_drawdown(history: pd.Series) -> float:
     """
@@ -119,6 +121,7 @@ def sharpe_ratio(history: pd.Series, risk_free: float, timeperiod: int = 255) ->
     # Calculate Sharpe Ratio using the formula
     return (returns - risk_free) / volatility
 
+
 def calmar_ratio(history: pd.Series, risk_free: float, timeperiod: int = 255) -> float:
     """
     #### Description:
@@ -142,6 +145,7 @@ def calmar_ratio(history: pd.Series, risk_free: float, timeperiod: int = 255) ->
         return (returns - risk_free) / abs(maxdrawdown)
     else:
         return np.nan
+
 
 def indexing(data: pd.Series, base: int = 100, weight: pd.Series = None) -> pd.Series:
     """
@@ -167,6 +171,7 @@ def indexing(data: pd.Series, base: int = 100, weight: pd.Series = None) -> pd.S
     if isinstance(weight, pd.Series):
         data = (data * weight).sum(axis=1)
     return data
+
 
 def var(history, freq: str, conf_level: float) -> float:
     """
@@ -196,6 +201,7 @@ def var(history, freq: str, conf_level: float) -> float:
 
     # Return the absolute value of VaR
     return abs(var)
+
 
 def momentum(history: pd.Series, period: int, differential: string ='last', method: string ='normal') -> pd.Series:
     """
