@@ -5,17 +5,17 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-  name = 'yahoo_finance',
-  packages = ['yahoo_finance'],
+  name = 'finance_toolkit',
+  packages = ['finance_toolkit'],
   version = '0.2.0',
   license= 'MIT',
-  description = 'Scrape financial data from Yahoo Finance web pages',
+  description = 'Fonction financières basiques',
   author = 'Mattéo Bernard',
   author_email = 'matteo.bernard@outlook.fr',
-  url = 'https://github.com/SuperWD40',
-  download_url = 'https://github.com/SuperWD40/yahoo_finance/archive/refs/tags/0.2.0.tar.gz',
+  url = 'https://github.com/Matteo-Bernard',
+  download_url = 'https://github.com/Matteo-Bernard/finance_toolkit.git',
   keywords = ['SCRAPING', 'FINANCE'],
-  install_requires=['pandas', 'datetime', 'io', 'random', 'requests', 'functools'],
+  install_requires=['pandas', 'numpy', 'typing'],
   long_description=read('README'),
   classifiers=[
     'Development Status :: 3 - Alpha',
