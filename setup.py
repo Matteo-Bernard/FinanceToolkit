@@ -6,8 +6,8 @@ def read(fname):
 
 setup(
   name = 'finance_toolkit',
-  packages = ['finance_toolkit'],
-  version = '0.2.0',
+  packages = find_packages(),
+  version = '0.0.1',
   license= 'MIT',
   description = 'Fonction financières basiques',
   author = 'Mattéo Bernard',
