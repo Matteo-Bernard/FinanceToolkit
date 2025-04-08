@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
   name = 'finance_toolkit',
-  packages = ['finance_toolkit'],
+  packages = find_packages(),
   version = '0.2.0',
   license= 'MIT',
   description = 'Fonction financières basiques',
@@ -15,8 +15,9 @@ setup(
   url = 'https://github.com/Matteo-Bernard',
   download_url = 'https://github.com/Matteo-Bernard/finance_toolkit/archive/refs/tags/v0.1.tar.gz',
   keywords = ['SCRAPING', 'FINANCE'],
-  install_requires=['pandas', 'numpy', 'typing'],
-  long_description=read('README'),
+  install_requires = ['pandas', 'numpy', 'typing'],
+  long_description = open('README.md').read(),
+  long_description_content_type='text/markdown',
   classifiers=[
     'Development Status :: 3 - Alpha',
     'Intended Audience :: Developers',
