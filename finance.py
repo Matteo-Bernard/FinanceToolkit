@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
+from typing import Literal
 
-def beta(asset: pd.Series, market: pd.Series) -> float:
+def beta(asset: pd.Series, market: pd.Series, way: Literal['+', '-', 'all']='all') -> float:
     """
     #### Description:
     Beta is a measure of a financial instrument's sensitivity to market movements. A beta of 1 indicates the asset tends
@@ -11,12 +12,28 @@ def beta(asset: pd.Series, market: pd.Series) -> float:
     #### Parameters:
     - asset (pd.Series): Time series data representing the returns of the asset.
     - market (pd.Series): Time series data representing the returns of the market.
+    - way (Literal['+', '-', 'all']): Specifies which type of data points should be considered for the beta calculation:
+        - '+' (positive): Only considers periods where the asset's returns are positive. This is useful for measuring
+          the beta when the asset is performing well.
+        - '-' (negative): Only considers periods where the asset's returns are negative. This is useful for measuring
+          the beta when the asset is underperforming.
+        - 'all': Considers all periods without any filtering, giving the traditional beta measurement.
 
     #### Returns:
-    - float: Beta coefficient, which measures the asset's sensitivity to market movements.
+    - float: Beta coefficient, which measures the asset's sensitivity to market movements based on the specified filter.
     """
     # Combine asset and market returns, calculate covariance and market variance
     df = pd.concat([asset, market], axis=1).dropna().pct_change().dropna()
+
+    # Filter data based on the 'way' parameter, focusing on asset variations
+    if way == '+':
+        df = df[df.iloc[:, 0] > 0]  # Filter where asset returns are positive
+    elif way == '-':
+        df = df[df.iloc[:, 0] < 0]  # Filter where asset returns are negative
+    elif way == 'all':
+        pass  # No filtering needed
+
+    # Calculate covariance and market variance
     covariance = df.cov().iloc[1, 0]
     market_variance = df.iloc[:, 1].var()
 
@@ -24,37 +41,35 @@ def beta(asset: pd.Series, market: pd.Series) -> float:
     return covariance / market_variance
 
 
-def avg_return(history: pd.Series, timeperiod: int = 255) -> float:
+def theta(history: pd.Series, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the average return of a financial instrument over a specified time period.
 
     #### Parameters:
     - history (pd.Series): Time series data representing the historical prices or returns of the financial instrument.
-    - timeperiod (int, optional): The number of periods to consider for calculating the average return. Default is 255.
+    - timeperiod (int, optional): The number of periods to consider for calculating the average return. Default is 252.
 
     #### Returns:
     - float: Average return over the specified time period.
     """
     returns = history.pct_change().dropna()
-    return (1 + returns.sum()) ** (timeperiod/returns.count()) - 1
+    return (np.prod(1 + returns) ** (timeperiod / len(returns))) - 1
 
-
-def avg_volatility(history: pd.Series, timeperiod: int = 255) -> float:
+def sigma(history: pd.Series, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the average volatility of a financial instrument over a specified time period.
 
     #### Parameters:
     - history (pd.Series): Time series data representing the historical prices or returns of the financial instrument.
-    - timeperiod (int, optional): The number of periods to consider for calculating the average volatility. Default is 255.
+    - timeperiod (int, optional): The number of periods to consider for calculating the average volatility. Default is 252.
 
     #### Returns:
     - float: Average volatility over the specified time period.
     """
     returns = history.pct_change(fill_method=None).dropna()
     return np.std(returns) * np.sqrt(timeperiod)
-
 
 def max_drawdown(history: pd.Series) -> float:
     """
@@ -78,6 +93,29 @@ def max_drawdown(history: pd.Series) -> float:
     # Return the maximum drawdown
     return drawdowns.min()
 
+def jensen_alpha(asset: pd.Series, market: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
+    """
+    #### Description:
+    Alpha measures the asset's performance relative to the market. A positive alpha indicates that the asset has outperformed
+    the market, while a negative alpha suggests underperformance.
+
+    #### Parameters:
+    - asset (pd.Series): Time series data representing the historical performance of the asset.
+    - market (pd.Series): Time series data representing the historical performance of the market.
+
+    #### Returns:
+    - float: Alpha, representing the excess return of the asset over the market.
+    """
+    # Calculate percentage change in asset and market
+    asset = asset.dropna()
+    market = market.dropna()
+    asset_return = (asset.iloc[-1] - asset.iloc[0]) / asset.iloc[0]
+    market_return = (market.iloc[-1] - market.iloc[0]) / market.iloc[0]
+    asset_beta = beta(asset, market)
+
+    #Calculte Jensen Alpha
+    return asset_return - (riskfree + asset_beta * (market_return - riskfree))
+
 
 def alpha(asset: pd.Series, market: pd.Series) -> float:
     """
@@ -100,7 +138,7 @@ def alpha(asset: pd.Series, market: pd.Series) -> float:
     return asset_return - market_return
 
 
-def sharpe_ratio(history: pd.Series, risk_free: float, timeperiod: int = 255) -> float:
+def sharpe_ratio(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the Sharpe Ratio for a given financial instrument based on its historical performance.
@@ -109,20 +147,19 @@ def sharpe_ratio(history: pd.Series, risk_free: float, timeperiod: int = 255) ->
     #### Parameters:
     - history (list or numpy array): Historical price or return data of the financial instrument.
     - risk_free (float): The risk-free rate of return, typically representing the return on a risk-free investment.
-    - timeperiod (int, optional): The time period used for calculating average return and volatility. Default is 255.
+    - timeperiod (int, optional): The time period used for calculating average return and volatility. Default is 252.
 
     #### Returns:
     - float: The Sharpe Ratio, a measure of the instrument's risk-adjusted performance.
     """
     # Calculate average return and volatility using helper functions
-    returns = avg_return(history=history, timeperiod=timeperiod)
-    volatility = avg_volatility(history=history, timeperiod=timeperiod)
+    returns = theta(history=history, timeperiod=timeperiod)
+    volatility = sigma(history=history, timeperiod=timeperiod)
     
     # Calculate Sharpe Ratio using the formula
     return (returns - risk_free) / volatility
 
-
-def calmar_ratio(history: pd.Series, risk_free: float, timeperiod: int = 255) -> float:
+def calmar_ratio(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the Calmar Ratio for a given financial instrument based on its historical performance.
@@ -131,13 +168,13 @@ def calmar_ratio(history: pd.Series, risk_free: float, timeperiod: int = 255) ->
     #### Parameters:
     - history (list or numpy array): Historical price or return data of the financial instrument.
     - risk_free (float): The risk-free rate of return, typically representing the return on a risk-free investment.
-    - timeperiod (int, optional): The time period used for calculating average return and volatility. Default is 255.
+    - timeperiod (int, optional): The time period used for calculating average return and volatility. Default is 252.
 
     #### Returns:
     - float: The Sharpe Ratio, a measure of the instrument's risk-adjusted performance.
     """
     # Calculate average return and volatility using helper functions
-    returns = avg_return(history=history, timeperiod=timeperiod)
+    returns = theta(history=history, timeperiod=timeperiod)
     maxdrawdown = max_drawdown(history=history)
     
     if abs(maxdrawdown) != 0:
@@ -145,7 +182,6 @@ def calmar_ratio(history: pd.Series, risk_free: float, timeperiod: int = 255) ->
         return (returns - risk_free) / abs(maxdrawdown)
     else:
         return np.nan
-
 
 def indexing(data: pd.Series, base: int = 100, weight: pd.Series = None) -> pd.Series:
     """
@@ -172,8 +208,7 @@ def indexing(data: pd.Series, base: int = 100, weight: pd.Series = None) -> pd.S
         data = (data * weight).sum(axis=1)
     return data
 
-
-def var(history, freq: str, conf_level: float) -> float:
+def historical_var(history, freq: str = 'B', conf_level: float = 0.05) -> float:
     """
     #### Description:
     Calculate the Value at Risk (VaR) for a given financial instrument based on its historical performance.
@@ -202,8 +237,7 @@ def var(history, freq: str, conf_level: float) -> float:
     # Return the absolute value of VaR
     return abs(var)
 
-
-def momentum(history: pd.Series, period: int, differential: string ='last', method: string ='normal') -> pd.Series:
+def momentum(history: pd.Series, period: int, differential: str ='last', method: str ='normal') -> pd.Series:
     """
     #### Description:
     Calculates the momentum of a time series data over a specified period.
@@ -243,9 +277,3 @@ def momentum(history: pd.Series, period: int, differential: string ='last', meth
         mo = 100 * np.log(np.array(ct / ctx))
         mo = pd.Series(mo, index=history.index[-len(ct):])
     return mo
-
-
-
-
-
-
