@@ -13,7 +13,7 @@ setup(
   author = 'Mattéo Bernard',
   author_email = 'matteo.bernard@outlook.fr',
   url = 'https://github.com/Matteo-Bernard',
-  download_url = 'https://github.com/Matteo-Bernard/finance_toolkit.git',
+  download_url = 'https://github.com/Matteo-Bernard/finance_toolkit/archive/refs/tags/v0.1.tar.gz',
   keywords = ['SCRAPING', 'FINANCE'],
   install_requires=['pandas', 'numpy', 'typing'],
   long_description=read('README'),
