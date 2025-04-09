@@ -138,7 +138,7 @@ def alpha(asset: pd.Series, market: pd.Series) -> float:
     return asset_return - market_return
 
 
-def sharpe_ratio(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float:
+def sharpe(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the Sharpe Ratio for a given financial instrument based on its historical performance.
@@ -159,7 +159,7 @@ def sharpe_ratio(history: pd.Series, risk_free: float, timeperiod: int = 252) ->
     # Calculate Sharpe Ratio using the formula
     return (returns - risk_free) / volatility
 
-def calmar_ratio(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float:
+def calmar(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the Calmar Ratio for a given financial instrument based on its historical performance.
