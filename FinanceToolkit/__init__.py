@@ -7,8 +7,8 @@ from .AssetManagement import (
     max_drawdown,
     jensen_alpha,
     alpha,
-    sharpe_ratio,
-    calmar_ratio,
+    sharpe,
+    calmar,
     indexing,
     historical_var,
     momentum
