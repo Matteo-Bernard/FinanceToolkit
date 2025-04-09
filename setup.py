@@ -9,7 +9,10 @@ setup(
     install_requires=[
         "pandas",
         "numpy",
-        "typing"
+        "typing",
+        "tqdm",
+        "scipy",
+        "matplotlib"
     ],
     include_package_data=True,
 )

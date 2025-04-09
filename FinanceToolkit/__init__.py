@@ -1,6 +1,6 @@
 # __init__.py
 
-from .AM import (
+from .AssetManagement import (
     beta,
     theta,
     sigma,
@@ -12,4 +12,10 @@ from .AM import (
     indexing,
     historical_var,
     momentum
+)
+
+from .NelsonSiegelCurvature import (
+    NSC,
+    NSC_histo,
+    NSC_comps
 )
