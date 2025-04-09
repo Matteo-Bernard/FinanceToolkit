@@ -13,9 +13,3 @@ from .AssetManagement import (
     historical_var,
     momentum
 )
-
-from .NelsonSiegelCurvature import (
-    NSC,
-    NSC_histo,
-    NSC_comps
-)
