@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name="FinanceToolkit",
-    version="0.0.3",
-    description="Toolkit financier",
+    version="0.0.5",
+    description="Toolkit for financial data analysis and modeling",
     author="Matteo Bernard",
     packages=find_packages(),
     install_requires=[
@@ -12,7 +12,6 @@ setup(
         "typing",
         "tqdm",
         "scipy",
-        "matplotlib"
     ],
     include_package_data=True,
 )

@@ -11,5 +11,6 @@ from .AssetManagement import (
     calmar,
     indexing,
     historical_var,
-    momentum
+    momentum,
+    gbm_multi
 )

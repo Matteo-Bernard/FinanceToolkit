@@ -277,3 +277,67 @@ def momentum(history: pd.Series, period: int, differential: str ='last', method:
         mo = 100 * np.log(np.array(ct / ctx))
         mo = pd.Series(mo, index=history.index[-len(ct):])
     return mo
+
+def gbm_multi(n_step, n_scenario, mu, sigma, corr_matrix, p_0, allocation):
+    """
+    Simulates a multi-asset Geometric Brownian Motion (GBM) for a portfolio.
+
+    Parameters
+    ----------
+    n_step : int
+        Number of time steps (e.g. trading days).
+    n_scenario : int
+        Number of Monte Carlo simulation paths.
+    mu : array-like
+        Annualized expected returns of each asset.
+    sigma : array-like
+        Annualized volatilities of each asset.
+    corr_matrix : 2D array-like
+        Correlation matrix between assets.
+    p_0 : float
+        Initial total portfolio value.
+    allocation : array-like
+        Portfolio weights for each asset (should sum to 1).
+
+    Returns
+    -------
+    ndarray
+        Simulated total portfolio values of shape (n_step, n_scenario).
+    """
+
+    # Ensure mu, sigma, and allocation are NumPy arrays
+    mu, sigma, allocation = map(np.array, (mu, sigma, allocation))
+
+    # Compute the covariance matrix using the volatilities and correlation matrix
+    cov_matrix = np.outer(sigma, sigma) * corr_matrix
+
+    # Cholesky decomposition to generate correlated standard normal variables
+    chol_matrix = np.linalg.cholesky(cov_matrix)
+
+    # Generate uncorrelated standard normal random variables
+    Z = np.random.normal(size=(n_step, n_scenario, len(mu)))
+
+    # Apply Cholesky transform to induce correlation structure
+    correlated_Z = Z @ chol_matrix.T
+
+    # Time increment assuming 252 trading days
+    dt = 1 / 252
+
+    # Compute drift term (discretized compounding)
+    drift = (1 + mu) ** dt
+
+    # Compute diffusion scale
+    diffusion = np.sqrt(dt)
+
+    # Initialize return array
+    returns = np.empty_like(correlated_Z)
+    returns[0] = 1  # Initial value set to 1 for all assets and scenarios
+
+    # Compute GBM returns
+    returns[1:] = drift * np.exp(correlated_Z[1:] * diffusion)
+
+    # Compute cumulative portfolio value across time steps and scenarios
+    portfolio = p_0 * allocation * np.cumprod(returns, axis=0)
+
+    # Sum across assets to get total portfolio value
+    return portfolio.sum(axis=2)
