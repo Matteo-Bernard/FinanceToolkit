@@ -228,13 +228,17 @@ def historical_var(history, freq: str = 'B', conf_level: float = 0.05) -> float:
     # Calculate the percentage change and drop any NaN values
     history = history.pct_change().dropna()
 
-    # Sort the percentage change data
-    history = history.sort_values()
-
     # Calculate VaR at the specified confidence level
-    var = history.iloc[round(len(history) * conf_level)]
+    if isinstance(history, pd.Series):
+        history = history.dropna().sort_values()
+        var = history.iloc[round(len(history) * conf_level)]
+    elif isinstance(history, pd.DataFrame):
+        var = pd.Series(index=history.columns)
+        for ticker in history.columns:
+            data = history[ticker].dropna()
+            data = data.sort_values()
+            var[ticker] = data.iloc[round(len(data) * conf_level)]
 
-    # Return the absolute value of VaR
     return abs(var)
 
 def momentum(history: pd.Series, period: int, differential: str ='last', method: str ='normal') -> pd.Series:
