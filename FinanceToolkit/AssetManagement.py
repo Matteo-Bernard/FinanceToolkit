@@ -2,28 +2,36 @@ import pandas as pd
 import numpy as np
 from typing import Literal
 
-def beta(history: pd.Series, benchmark: pd.Series) -> float:
+def beta(history: pd.DataFrame, benchmark: pd.Series) -> pd.Series:
     """
-    #### Description:
-    Beta is a measure of a financial instrument's sensitivity to benchmark movements. A beta of 1 indicates the history tends
-    to move in line with the benchmark, a beta greater than 1 suggests higher volatility, and a beta less than 1 indicates
-    lower volatility compared to the benchmark.
+    Calculate the beta of each asset in the history DataFrame relative to the benchmark.
 
-    #### Parameters:
-    - history (pd.Series): Time series data representing the returns of the history.
-    - benchmark (pd.Series): Time series data representing the returns of the benchmark.
+    Parameters:
+    - history (pd.DataFrame): DataFrame where each column represents the returns of an asset.
+    - benchmark (pd.Series): Series representing the returns of the benchmark.
 
-    #### Returns:
-    - float: Beta coefficient, which measures the history's sensitivity to benchmark movements based on the specified filter.
+    Returns:
+    - pd.Series: Series where each element is the beta of an asset relative to the benchmark.
     """
-    # Combine history and benchmark returns, calculate covariance and benchmark variance
-    df = pd.concat([history, benchmark], axis=1).dropna().pct_change().dropna()
+    # Calculate percentage changes and drop NA values
+    history = history.pct_change().dropna()
+    benchmark = benchmark.pct_change().dropna()
 
-    # Calculate correlation matrix
-    beta = df.corr()
+    # Combine history and benchmark returns into a DataFrame
+    df = pd.concat([history, benchmark], axis=1).dropna()
+    history = df.iloc[:,:-1] 
+    benchmark = df.iloc[:,-1]
 
-    # Return the beta value between history and benchmark
-    return beta.iloc[0, 1]  
+    # Calculate the covariance and benchmark variance
+    benchmark_variance = benchmark.var()
+
+    # Calculate the covariance of each asset with the benchmark
+    covariances = history.apply(lambda x: x.cov(benchmark))
+
+    # Calculate beta for each asset using vectorized operations
+    beta = covariances / benchmark_variance
+
+    return beta.rename('Beta')
 
 def beta_advanced(history: pd.Series, benchmark: pd.Series, way: Literal['+', '-', 'all']='all') -> float:
     """
