@@ -278,7 +278,7 @@ def momentum(history: pd.Series, period: int, differential: str ='last', method:
         mo = pd.Series(mo, index=history.index[-len(ct):])
     return mo
 
-def gbm_multi(n_step, n_scenario, mu, sigma, corr_matrix, p_0, allocation):
+def gbm_multi(n_step: int, n_scenario: int, mu: pd.Series, sigma: pd.Series, corr_matrix: pd.DataFrame, p_0: float, allocation: pd.Series) -> np.ndarray:
     """
     Simulates a multi-asset Geometric Brownian Motion (GBM) for a portfolio.
 
@@ -341,3 +341,69 @@ def gbm_multi(n_step, n_scenario, mu, sigma, corr_matrix, p_0, allocation):
 
     # Sum across assets to get total portfolio value
     return portfolio.sum(axis=2)
+
+def relative_volatility_contribution(history: pd.DataFrame, weights: pd.Series) -> pd.Series:
+    """
+    Calcule la contribution relative de chaque actif à la volatilité totale du portefeuille.
+
+    Parameters
+    ----------
+    history : pd.DataFrame
+        Séries temporelles des cours des actifs (colonnes = noms des actifs, lignes = dates).
+    weights : pd.Series
+        Pondérations du portefeuille (index = noms des actifs).
+
+    Returns
+    -------
+    pd.Series
+        Contribution relative de chaque actif à la volatilité totale du portefeuille (somme = 1.0).
+    """
+    # Calcul des rendements
+    returns = history.pct_change().dropna()
+    
+    # Matrice de covariance
+    cov_matrix = returns.cov()
+
+    # Volatilité totale du portefeuille
+    port_vol = np.sqrt(weights.T @ cov_matrix @ weights)
+
+    # Contribution absolue à la volatilité
+    marginal_contrib = cov_matrix @ weights / port_vol
+    contrib_abs = weights * marginal_contrib
+
+    # Contribution relative
+    cvr = contrib_abs / port_vol
+    cvr.name = 'relative_vol_contribution'
+
+    return cvr
+
+def marginal_contribution_to_risk(history: pd.DataFrame, weights: pd.Series) -> pd.Series:
+    """
+    Calcule la marginal contribution to risk (MCR) de chaque actif dans un portefeuille.
+
+    Parameters
+    ----------
+    history : pd.DataFrame
+        Séries temporelles des prix ou des valeurs liquidatives des actifs (colonnes = noms des actifs, lignes = dates).
+    weights : pd.Series
+        Pondérations du portefeuille (index = noms des actifs, mêmes noms que les colonnes de `history`).
+
+    Returns
+    -------
+    pd.Series
+        Marginal contribution to risk (MCR) de chaque actif (même unité que la volatilité, ne somme pas à 1).
+    """
+    # Calcul des rendements
+    returns = history.pct_change().dropna()
+
+    # Matrice de covariance
+    cov_matrix = returns.cov()
+
+    # Volatilité totale du portefeuille
+    port_vol = np.sqrt(weights.T @ cov_matrix @ weights)
+
+    # MCR = (Σ w)_i / σ_p
+    mcr = cov_matrix @ weights / port_vol
+    mcr.name = 'marginal_contribution_to_risk'
+
+    return mcr

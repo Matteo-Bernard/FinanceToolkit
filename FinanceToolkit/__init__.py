@@ -12,5 +12,7 @@ from .AssetManagement import (
     indexing,
     historical_var,
     momentum,
-    gbm_multi
+    gbm_multi,
+    relative_volatility_contribution,
+    marginal_contribution_to_risk
 )
