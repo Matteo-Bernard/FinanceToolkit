@@ -29,9 +29,9 @@ def beta(history: pd.DataFrame, benchmark: pd.Series) -> pd.Series:
     covariances = history.apply(lambda x: x.cov(benchmark))
 
     # Calculate beta for each asset using vectorized operations
-    beta = covariances / benchmark_variance
+    betas = covariances / benchmark_variance
 
-    return beta.rename('Beta')
+    return betas.rename('Beta')
 
 def beta_advanced(history: pd.Series, benchmark: pd.Series, way: Literal['+', '-', 'all']='all') -> float:
     """
