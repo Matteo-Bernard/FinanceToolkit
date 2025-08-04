@@ -2,16 +2,16 @@ import pandas as pd
 import numpy as np
 from typing import Literal
 
-def beta(asset: pd.Series, market: pd.Series, way: Literal['+', '-', 'all']='all') -> float:
+def beta(asset: pd.Series, benchmark: pd.Series, way: Literal['+', '-', 'all']='all') -> float:
     """
     #### Description:
-    Beta is a measure of a financial instrument's sensitivity to market movements. A beta of 1 indicates the asset tends
-    to move in line with the market, a beta greater than 1 suggests higher volatility, and a beta less than 1 indicates
-    lower volatility compared to the market.
+    Beta is a measure of a financial instrument's sensitivity to benchmark movements. A beta of 1 indicates the asset tends
+    to move in line with the benchmark, a beta greater than 1 suggests higher volatility, and a beta less than 1 indicates
+    lower volatility compared to the benchmark.
 
     #### Parameters:
     - asset (pd.Series): Time series data representing the returns of the asset.
-    - market (pd.Series): Time series data representing the returns of the market.
+    - benchmark (pd.Series): Time series data representing the returns of the benchmark.
     - way (Literal['+', '-', 'all']): Specifies which type of data points should be considered for the beta calculation:
         - '+' (positive): Only considers periods where the asset's returns are positive. This is useful for measuring
           the beta when the asset is performing well.
@@ -20,10 +20,10 @@ def beta(asset: pd.Series, market: pd.Series, way: Literal['+', '-', 'all']='all
         - 'all': Considers all periods without any filtering, giving the traditional beta measurement.
 
     #### Returns:
-    - float: Beta coefficient, which measures the asset's sensitivity to market movements based on the specified filter.
+    - float: Beta coefficient, which measures the asset's sensitivity to benchmark movements based on the specified filter.
     """
-    # Combine asset and market returns, calculate covariance and market variance
-    df = pd.concat([asset, market], axis=1).dropna().pct_change().dropna()
+    # Combine asset and benchmark returns, calculate covariance and benchmark variance
+    df = pd.concat([asset, benchmark], axis=1).dropna().pct_change().dropna()
 
     # Filter data based on the 'way' parameter, focusing on asset variations
     if way == '+':
@@ -33,12 +33,12 @@ def beta(asset: pd.Series, market: pd.Series, way: Literal['+', '-', 'all']='all
     elif way == 'all':
         pass  # No filtering needed
 
-    # Calculate covariance and market variance
+    # Calculate covariance and benchmark variance
     covariance = df.cov().iloc[1, 0]
-    market_variance = df.iloc[:, 1].var()
+    benchmark_variance = df.iloc[:, 1].var()
 
-    # Calculate beta as the ratio of covariance to market variance
-    return covariance / market_variance
+    # Calculate beta as the ratio of covariance to benchmark variance
+    return covariance / benchmark_variance
 
 
 def theta(history: pd.Series, timeperiod: int = 252) -> float:
@@ -93,49 +93,49 @@ def max_drawdown(history: pd.Series) -> float:
     # Return the maximum drawdown
     return drawdowns.min()
 
-def jensen_alpha(asset: pd.Series, market: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
+def jensen_alpha(asset: pd.Series, benchmark: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     """
     #### Description:
-    Alpha measures the asset's performance relative to the market. A positive alpha indicates that the asset has outperformed
-    the market, while a negative alpha suggests underperformance.
+    Alpha measures the asset's performance relative to the benchmark. A positive alpha indicates that the asset has outperformed
+    the benchmark, while a negative alpha suggests underperformance.
 
     #### Parameters:
     - asset (pd.Series): Time series data representing the historical performance of the asset.
-    - market (pd.Series): Time series data representing the historical performance of the market.
+    - benchmark (pd.Series): Time series data representing the historical performance of the benchmark.
 
     #### Returns:
-    - float: Alpha, representing the excess return of the asset over the market.
+    - float: Alpha, representing the excess return of the asset over the benchmark.
     """
-    # Calculate percentage change in asset and market
+    # Calculate percentage change in asset and benchmark
     asset = asset.dropna()
-    market = market.dropna()
+    benchmark = benchmark.dropna()
     asset_return = (asset.iloc[-1] - asset.iloc[0]) / asset.iloc[0]
-    market_return = (market.iloc[-1] - market.iloc[0]) / market.iloc[0]
-    asset_beta = beta(asset, market)
+    benchmark_return = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
+    asset_beta = beta(asset, benchmark)
 
     #Calculte Jensen Alpha
-    return asset_return - (riskfree + asset_beta * (market_return - riskfree))
+    return asset_return - (riskfree + asset_beta * (benchmark_return - riskfree))
 
 
-def alpha(asset: pd.Series, market: pd.Series) -> float:
+def alpha(asset: pd.Series, benchmark: pd.Series) -> float:
     """
     #### Description:
-    Alpha measures the asset's performance relative to the market. A positive alpha indicates that the asset has outperformed
-    the market, while a negative alpha suggests underperformance.
+    Alpha measures the asset's performance relative to the benchmark. A positive alpha indicates that the asset has outperformed
+    the benchmark, while a negative alpha suggests underperformance.
 
     #### Parameters:
     - asset (pd.Series): Time series data representing the historical performance of the asset.
-    - market (pd.Series): Time series data representing the historical performance of the market.
+    - benchmark (pd.Series): Time series data representing the historical performance of the benchmark.
 
     #### Returns:
-    - float: Alpha, representing the excess return of the asset over the market.
+    - float: Alpha, representing the excess return of the asset over the benchmark.
     """
-    # Calculate percentage change in asset and market
+    # Calculate percentage change in asset and benchmark
     asset_return = (asset.iloc[-1] - asset.iloc[0]) / asset.iloc[0]
-    market_return = (market.iloc[-1] - market.iloc[0]) / market.iloc[0]
+    benchmark_return = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
 
     # Calculate alpha as the difference in returns
-    return asset_return - market_return
+    return asset_return - benchmark_return
 
 
 def sharpe(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
