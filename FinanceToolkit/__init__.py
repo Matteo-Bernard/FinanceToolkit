@@ -2,6 +2,7 @@
 
 from .AssetManagement import (
     beta,
+    beta_advanced,
     theta,
     sigma,
     max_drawdown,
