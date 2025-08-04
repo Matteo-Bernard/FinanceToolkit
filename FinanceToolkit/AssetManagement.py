@@ -2,34 +2,34 @@ import pandas as pd
 import numpy as np
 from typing import Literal
 
-def beta(asset: pd.Series, benchmark: pd.Series, way: Literal['+', '-', 'all']='all') -> float:
+def beta(history: pd.Series, benchmark: pd.Series, way: Literal['+', '-', 'all']='all') -> float:
     """
     #### Description:
-    Beta is a measure of a financial instrument's sensitivity to benchmark movements. A beta of 1 indicates the asset tends
+    Beta is a measure of a financial instrument's sensitivity to benchmark movements. A beta of 1 indicates the history tends
     to move in line with the benchmark, a beta greater than 1 suggests higher volatility, and a beta less than 1 indicates
     lower volatility compared to the benchmark.
 
     #### Parameters:
-    - asset (pd.Series): Time series data representing the returns of the asset.
+    - history (pd.Series): Time series data representing the returns of the history.
     - benchmark (pd.Series): Time series data representing the returns of the benchmark.
     - way (Literal['+', '-', 'all']): Specifies which type of data points should be considered for the beta calculation:
-        - '+' (positive): Only considers periods where the asset's returns are positive. This is useful for measuring
-          the beta when the asset is performing well.
-        - '-' (negative): Only considers periods where the asset's returns are negative. This is useful for measuring
-          the beta when the asset is underperforming.
+        - '+' (positive): Only considers periods where the history's returns are positive. This is useful for measuring
+          the beta when the history is performing well.
+        - '-' (negative): Only considers periods where the history's returns are negative. This is useful for measuring
+          the beta when the history is underperforming.
         - 'all': Considers all periods without any filtering, giving the traditional beta measurement.
 
     #### Returns:
-    - float: Beta coefficient, which measures the asset's sensitivity to benchmark movements based on the specified filter.
+    - float: Beta coefficient, which measures the history's sensitivity to benchmark movements based on the specified filter.
     """
-    # Combine asset and benchmark returns, calculate covariance and benchmark variance
-    df = pd.concat([asset, benchmark], axis=1).dropna().pct_change().dropna()
+    # Combine history and benchmark returns, calculate covariance and benchmark variance
+    df = pd.concat([history, benchmark], axis=1).dropna().pct_change().dropna()
 
-    # Filter data based on the 'way' parameter, focusing on asset variations
+    # Filter data based on the 'way' parameter, focusing on history variations
     if way == '+':
-        df = df[df.iloc[:, 0] > 0]  # Filter where asset returns are positive
+        df = df[df.iloc[:, 0] > 0]  # Filter where history returns are positive
     elif way == '-':
-        df = df[df.iloc[:, 0] < 0]  # Filter where asset returns are negative
+        df = df[df.iloc[:, 0] < 0]  # Filter where history returns are negative
     elif way == 'all':
         pass  # No filtering needed
 
@@ -93,49 +93,49 @@ def max_drawdown(history: pd.Series) -> float:
     # Return the maximum drawdown
     return drawdowns.min()
 
-def jensen_alpha(asset: pd.Series, benchmark: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
+def jensen_alpha(history: pd.Series, benchmark: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     """
     #### Description:
-    Alpha measures the asset's performance relative to the benchmark. A positive alpha indicates that the asset has outperformed
+    Alpha measures the history's performance relative to the benchmark. A positive alpha indicates that the history has outperformed
     the benchmark, while a negative alpha suggests underperformance.
 
     #### Parameters:
-    - asset (pd.Series): Time series data representing the historical performance of the asset.
+    - history (pd.Series): Time series data representing the historical performance of the history.
     - benchmark (pd.Series): Time series data representing the historical performance of the benchmark.
 
     #### Returns:
-    - float: Alpha, representing the excess return of the asset over the benchmark.
+    - float: Alpha, representing the excess return of the history over the benchmark.
     """
-    # Calculate percentage change in asset and benchmark
-    asset = asset.dropna()
+    # Calculate percentage change in history and benchmark
+    history = history.dropna()
     benchmark = benchmark.dropna()
-    asset_return = (asset.iloc[-1] - asset.iloc[0]) / asset.iloc[0]
+    history_return = (history.iloc[-1] - history.iloc[0]) / history.iloc[0]
     benchmark_return = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
-    asset_beta = beta(asset, benchmark)
+    history_beta = beta(history, benchmark)
 
     #Calculte Jensen Alpha
-    return asset_return - (riskfree + asset_beta * (benchmark_return - riskfree))
+    return history_return - (riskfree + history_beta * (benchmark_return - riskfree))
 
 
-def alpha(asset: pd.Series, benchmark: pd.Series) -> float:
+def alpha(history: pd.Series, benchmark: pd.Series) -> float:
     """
     #### Description:
-    Alpha measures the asset's performance relative to the benchmark. A positive alpha indicates that the asset has outperformed
+    Alpha measures the history's performance relative to the benchmark. A positive alpha indicates that the history has outperformed
     the benchmark, while a negative alpha suggests underperformance.
 
     #### Parameters:
-    - asset (pd.Series): Time series data representing the historical performance of the asset.
+    - history (pd.Series): Time series data representing the historical performance of the history.
     - benchmark (pd.Series): Time series data representing the historical performance of the benchmark.
 
     #### Returns:
-    - float: Alpha, representing the excess return of the asset over the benchmark.
+    - float: Alpha, representing the excess return of the history over the benchmark.
     """
-    # Calculate percentage change in asset and benchmark
-    asset_return = (asset.iloc[-1] - asset.iloc[0]) / asset.iloc[0]
+    # Calculate percentage change in history and benchmark
+    history_return = (history.iloc[-1] - history.iloc[0]) / history.iloc[0]
     benchmark_return = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
 
     # Calculate alpha as the difference in returns
-    return asset_return - benchmark_return
+    return history_return - benchmark_return
 
 
 def sharpe(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
@@ -294,7 +294,7 @@ def momentum(history: pd.Series, period: int, differential: str ='last', method:
 
 def gbm_multi(n_step: int, n_scenario: int, mu: pd.Series, sigma: pd.Series, corr_matrix: pd.DataFrame, p_0: float, allocation: pd.Series) -> np.ndarray:
     """
-    Simulates a multi-asset Geometric Brownian Motion (GBM) for a portfolio.
+    Simulates a multi-history Geometric Brownian Motion (GBM) for a portfolio.
 
     Parameters
     ----------
@@ -303,15 +303,15 @@ def gbm_multi(n_step: int, n_scenario: int, mu: pd.Series, sigma: pd.Series, cor
     n_scenario : int
         Number of Monte Carlo simulation paths.
     mu : array-like
-        Annualized expected returns of each asset.
+        Annualized expected returns of each history.
     sigma : array-like
-        Annualized volatilities of each asset.
+        Annualized volatilities of each history.
     corr_matrix : 2D array-like
-        Correlation matrix between assets.
+        Correlation matrix between historys.
     p_0 : float
         Initial total portfolio value.
     allocation : array-like
-        Portfolio weights for each asset (should sum to 1).
+        Portfolio weights for each history (should sum to 1).
 
     Returns
     -------
@@ -345,7 +345,7 @@ def gbm_multi(n_step: int, n_scenario: int, mu: pd.Series, sigma: pd.Series, cor
 
     # Initialize return array
     returns = np.empty_like(correlated_Z)
-    returns[0] = 1  # Initial value set to 1 for all assets and scenarios
+    returns[0] = 1  # Initial value set to 1 for all historys and scenarios
 
     # Compute GBM returns
     returns[1:] = drift * np.exp(correlated_Z[1:] * diffusion)
@@ -353,7 +353,7 @@ def gbm_multi(n_step: int, n_scenario: int, mu: pd.Series, sigma: pd.Series, cor
     # Compute cumulative portfolio value across time steps and scenarios
     portfolio = p_0 * allocation * np.cumprod(returns, axis=0)
 
-    # Sum across assets to get total portfolio value
+    # Sum across historys to get total portfolio value
     return portfolio.sum(axis=2)
 
 def relative_volatility_contribution(history: pd.DataFrame, weights: pd.Series) -> pd.Series:
