@@ -138,7 +138,7 @@ def alpha(asset: pd.Series, market: pd.Series) -> float:
     return asset_return - market_return
 
 
-def sharpe(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float:
+def sharpe(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the Sharpe Ratio for a given financial instrument based on its historical performance.
@@ -146,7 +146,7 @@ def sharpe(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float
 
     #### Parameters:
     - history (list or numpy array): Historical price or return data of the financial instrument.
-    - risk_free (float): The risk-free rate of return, typically representing the return on a risk-free investment.
+    - riskfree (float): The risk-free rate of return, typically representing the return on a risk-free investment.
     - timeperiod (int, optional): The time period used for calculating average return and volatility. Default is 252.
 
     #### Returns:
@@ -157,9 +157,9 @@ def sharpe(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float
     volatility = sigma(history=history, timeperiod=timeperiod)
     
     # Calculate Sharpe Ratio using the formula
-    return (returns - risk_free) / volatility
+    return (returns - riskfree) / volatility
 
-def calmar(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float:
+def calmar(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the Calmar Ratio for a given financial instrument based on its historical performance.
@@ -167,7 +167,7 @@ def calmar(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float
 
     #### Parameters:
     - history (list or numpy array): Historical price or return data of the financial instrument.
-    - risk_free (float): The risk-free rate of return, typically representing the return on a risk-free investment.
+    - riskfree (float): The risk-free rate of return, typically representing the return on a risk-free investment.
     - timeperiod (int, optional): The time period used for calculating average return and volatility. Default is 252.
 
     #### Returns:
@@ -179,7 +179,7 @@ def calmar(history: pd.Series, risk_free: float, timeperiod: int = 252) -> float
     
     if abs(maxdrawdown) != 0:
         # Calculate Sharpe Ratio using the formula
-        return (returns - risk_free) / abs(maxdrawdown)
+        return (returns - riskfree) / abs(maxdrawdown)
     else:
         return np.nan
 
