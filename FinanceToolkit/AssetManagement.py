@@ -177,11 +177,21 @@ def calmar(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     returns = theta(history=history, timeperiod=timeperiod)
     maxdrawdown = max_drawdown(history=history)
     
-    if abs(maxdrawdown) != 0:
-        # Calculate Sharpe Ratio using the formula
-        return (returns - riskfree) / abs(maxdrawdown)
-    else:
-        return np.nan
+    if isinstance(history, pd.Series):
+        if abs(maxdrawdown) != 0:
+            # Calculate Sharpe Ratio using the formula
+            return (returns - riskfree) / abs(maxdrawdown)
+        else:
+            return np.nan
+    elif isinstance(history, pd.DataFrame):
+        calmar = pd.Series(index=history.columns)
+        for column in history.columns:
+            if abs(maxdrawdown[column]) != 0:
+                # Calculate Sharpe Ratio for each column in the DataFrame
+                calmar[column] = (returns[column] - riskfree) / abs(maxdrawdown[column])
+            else:
+                calmar[column] = np.nan
+        return calmar
 
 def indexing(data: pd.Series, base: int = 100, weight: pd.Series = None) -> pd.Series:
     """
