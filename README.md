@@ -16,7 +16,7 @@
 - **Historical VaR**: Calculates Value at Risk (VaR) based on historical performance at specified confidence levels
 
 ### Portfolio Analytics
-- **Relative Volatility Contribution**: Calculates each asset's relative contribution to total portfolio volatility
+- **Relative Volatility Contribution (RVC)**: Calculates each asset's relative contribution to total portfolio volatility
 - **Marginal Contribution to Risk (MCR)**: Measures the marginal impact of each asset on portfolio risk
 
 ### Technical Analysis
@@ -26,7 +26,7 @@
 ### Simulation Tools
 - **Multi-Asset GBM**: Geometric Brownian Motion simulation for correlated multi-asset portfolios using Monte Carlo methods
 
-## Recent Updates (v2.0)
+## Recent Updates (v0.1.7)
 
 ### Bug Fixes
 - **Fixed FutureWarning**: Resolved pandas deprecation warning in `theta()` function by explicitly handling DataFrame.prod() operations
@@ -189,7 +189,7 @@ print(f"1% VaR: {var_1:.2%}")
 
 ## Contributing
 
-Contributions are welcome! If you would like to contribute to `finance_toolkit`, please follow these steps:
+Contributions are welcome! If you would like to contribute to `FinanceToolkit`, please follow these steps:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/new-feature`)
@@ -199,34 +199,15 @@ Contributions are welcome! If you would like to contribute to `finance_toolkit`,
 6. Push to the branch (`git push origin feature/new-feature`)
 7. Open a Pull Request
 
-### Development Guidelines
-- Write comprehensive docstrings for all functions
-- Include type hints where appropriate
-- Add unit tests for new functionality
-- Ensure compatibility with pandas >= 1.3.0
-
-## Testing
-
-Run the test suite using:
-
-```bash
-pytest tests/
-```
-
-## Version History
-
-- **v2.0.0**: Major update with bug fixes, enhanced portfolio analytics, and simulation tools
-- **v1.0.0**: Initial release with core financial metrics
-
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the Apache-2.0 License. See the LICENSE file for details.
 
 ## Contact
 
 For questions, suggestions, or bug reports, please:
 - Open an issue on GitHub
-- Contact: [your_email@example.com](mailto:your_email@example.com)
+- Contact: [matteo.bernard@outlook.fr](mailto:matteo.bernard@outlook.fr)
 
 ## Acknowledgments
 
