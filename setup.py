@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="FinanceToolkit",
-    version="0.1.5",
+    version="0.1.6",
     description="Toolkit for financial data analysis and modeling",
     author="Matteo Bernard",
     packages=find_packages(),
