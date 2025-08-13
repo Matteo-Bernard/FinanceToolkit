@@ -177,12 +177,16 @@ def alpha(history: pd.Series, benchmark: pd.Series) -> float:
     #### Returns:
     - float: Alpha, representing the excess return of the history over the benchmark.
     """
-    # Calculate percentage change in history and benchmark
-    history_return = (history.iloc[-1] - history.iloc[0]) / history.iloc[0]
-    benchmark_return = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
-
-    # Calculate alpha as the difference in returns
-    return history_return - benchmark_return
+    if isinstance(history, pd.DataFrame):
+        history['Benchmark'] = benchmark
+        history = history.dropna()
+        returns = (history.iloc[-1] - history.iloc[0]) / history.iloc[0]
+        alpha = returns.iloc[:-1] - returns.iloc[-1]
+    else:
+        history_return = (history.iloc[-1] - history.iloc[0]) / history.iloc[0]
+        benchmark_return = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
+        alpha = history_return - benchmark_return
+    return alpha
 
 
 def sharpe(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
