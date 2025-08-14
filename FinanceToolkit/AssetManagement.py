@@ -2,38 +2,7 @@ import pandas as pd
 import numpy as np
 from typing import Literal
 
-def beta(history: pd.DataFrame, benchmark: pd.Series) -> pd.Series:
-    """
-    Calculate the beta of each asset in the history DataFrame relative to the benchmark.
-
-    Parameters:
-    - history (pd.DataFrame): DataFrame where each column represents the returns of an asset.
-    - benchmark (pd.Series): Series representing the returns of the benchmark.
-
-    Returns:
-    - pd.Series: Series where each element is the beta of an asset relative to the benchmark.
-    """
-    # Calculate percentage changes and drop NA values
-    history_returns = history.pct_change().dropna()
-    benchmark_returns = benchmark.pct_change().dropna()
-
-    # Combine history and benchmark returns into a DataFrame
-    df = pd.concat([history_returns, benchmark_returns], axis=1).dropna()
-    history_aligned = df.iloc[:,:-1] 
-    benchmark_aligned = df.iloc[:,-1]
-
-    # Calculate the covariance and benchmark variance
-    benchmark_variance = benchmark_aligned.var()
-
-    # Calculate the covariance of each asset with the benchmark
-    covariances = history_aligned.apply(lambda x: x.cov(benchmark_aligned))
-
-    # Calculate beta for each asset using vectorized operations
-    betas = covariances / benchmark_variance
-
-    return betas.rename('Beta')
-
-def beta_advanced(history: pd.Series, benchmark: pd.Series, way: Literal['+', '-', 'all']='all') -> float:
+def beta(asset: pd.Series, benchmark: pd.Series, way: Literal['+', '-', 'all']='all') -> float:
     """
     #### Description:
     Beta is a measure of a financial instrument's sensitivity to benchmark movements. A beta of 1 indicates the history tends
@@ -41,7 +10,7 @@ def beta_advanced(history: pd.Series, benchmark: pd.Series, way: Literal['+', '-
     lower volatility compared to the benchmark.
 
     #### Parameters:
-    - history (pd.Series): Time series data representing the returns of the history.
+    - asset (pd.Series): Time series data representing the returns of the financial instrument.
     - benchmark (pd.Series): Time series data representing the returns of the benchmark.
     - way (Literal['+', '-', 'all']): Specifies which type of data points should be considered for the beta calculation:
         - '+' (positive): Only considers periods where the history's returns are positive. This is useful for measuring
@@ -54,7 +23,7 @@ def beta_advanced(history: pd.Series, benchmark: pd.Series, way: Literal['+', '-
     - float: Beta coefficient, which measures the history's sensitivity to benchmark movements based on the specified filter.
     """
     # Combine history and benchmark returns, calculate covariance and benchmark variance
-    df = pd.concat([history, benchmark], axis=1).dropna().pct_change().dropna()
+    df = pd.concat([asset, benchmark], axis=1).dropna().pct_change().dropna()
 
     # Filter data based on the 'way' parameter, focusing on history variations
     if way == '+':
@@ -72,55 +41,50 @@ def beta_advanced(history: pd.Series, benchmark: pd.Series, way: Literal['+', '-
     return covariance / benchmark_variance
 
 
-def theta(history: pd.Series, timeperiod: int = 252) -> float:
+def theta(asset: pd.Series, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the average return of a financial instrument over a specified time period.
 
     #### Parameters:
-    - history (pd.Series): Time series data representing the historical prices or returns of the financial instrument.
+    - asset (pd.Series): Time series data representing the historical prices or returns of the financial instrument.
     - timeperiod (int, optional): The number of periods to consider for calculating the average return. Default is 252.
 
     #### Returns:
     - float: Average return over the specified time period.
     """
-    returns = history.pct_change().dropna()
-    # Fix for FutureWarning: explicitly specify axis=0 for prod()
-    if isinstance(returns, pd.DataFrame):
-        cumulative_return = (1 + returns).prod(axis=0) ** (timeperiod / len(returns)) - 1
-    else:
-        cumulative_return = (1 + returns).prod() ** (timeperiod / len(returns)) - 1
-    return cumulative_return
+    returns = asset.pct_change().dropna()
+    return (1 + returns).prod() ** (timeperiod / len(returns)) - 1
 
-def sigma(history: pd.Series, timeperiod: int = 252) -> float:
+def sigma(asset: pd.Series, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the average volatility of a financial instrument over a specified time period.
 
     #### Parameters:
-    - history (pd.Series): Time series data representing the historical prices or returns of the financial instrument.
+    - asset (pd.Series): Time series data representing the historical prices or returns of the financial instrument.
     - timeperiod (int, optional): The number of periods to consider for calculating the average volatility. Default is 252.
 
     #### Returns:
     - float: Average volatility over the specified time period.
     """
-    returns = history.pct_change().dropna()
+    returns = asset.pct_change().dropna()
     return returns.std() * np.sqrt(timeperiod)
 
-def max_drawdown(history: pd.Series) -> float:
+def max_drawdown(asset: pd.Series) -> float:
     """
     #### Description:
     Max Drawdown is a measure of the largest loss from a peak to a trough in a financial instrument's historical performance.
     It is calculated as the percentage decline relative to the highest cumulative value.
 
     #### Parameters:
-    - history (pd.Series): Time series data representing the historical prices or returns of the financial instrument.
+    - asset (pd.Series): Time series data representing the historical prices or returns of the financial instrument.
 
     #### Returns:
     - float: Maximum drawdown, representing the largest percentage decline from a peak to a trough.
     """
     # Calculate the cumulative percentage change in price or returns
-    index = 100 * (1 + history.pct_change()).cumprod()
+    index = 100 * (1 + asset.pct_change()).cumprod()
 
     # Identify the peaks and calculate drawdowns
     peaks = index.cummax()
@@ -129,7 +93,7 @@ def max_drawdown(history: pd.Series) -> float:
     # Return the maximum drawdown
     return drawdowns.min()
 
-def jensen_alpha(history: pd.Series, benchmark: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
+def jensen_alpha(asset: pd.Series, benchmark: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     """
     #### Description:
     Alpha measures the history's performance relative to the benchmark. A positive alpha indicates that the history has outperformed
@@ -144,59 +108,130 @@ def jensen_alpha(history: pd.Series, benchmark: pd.Series, riskfree: float, time
     #### Returns:
     - float: Jensen's Alpha, representing the excess return of the history over the benchmark adjusted for systematic risk.
     """
-    # Calculate percentage change in history and benchmark
-    history_clean = history.dropna()
-    benchmark_clean = benchmark.dropna()
-    
-    # Align the series
-    aligned_data = pd.concat([history_clean, benchmark_clean], axis=1).dropna()
-    history_aligned = aligned_data.iloc[:, 0]
-    benchmark_aligned = aligned_data.iloc[:, 1]
-    
+    asset = asset.dropna()
+    benchmark = benchmark.dropna()
+
+    # Align dates
+    asset = asset.align(benchmark, join='inner')[0]
+
     # Calculate returns
-    history_return = (history_aligned.iloc[-1] - history_aligned.iloc[0]) / history_aligned.iloc[0]
-    benchmark_return = (benchmark_aligned.iloc[-1] - benchmark_aligned.iloc[0]) / benchmark_aligned.iloc[0]
+    asset_returns = (asset.iloc[-1] - asset.iloc[0]) / asset.iloc[0]
+    benchmark_returns = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
     
     # Calculate beta using the beta function
-    history_beta = beta(pd.DataFrame({'asset': history_aligned}), benchmark_aligned).iloc[0]
+    history_beta = beta(asset, benchmark)
 
     # Calculate Jensen Alpha
-    return history_return - (riskfree + history_beta * (benchmark_return - riskfree))
+    return asset_returns - (riskfree + history_beta * (benchmark_returns - riskfree))
 
 
-def alpha(history: pd.Series, benchmark: pd.Series) -> float:
+def alpha(asset: pd.Series, benchmark: pd.Series) -> float:
     """
     #### Description:
-    Alpha measures the history's performance relative to the benchmark. A positive alpha indicates that the history has outperformed
+    Calculate the alpha of a financial instrument relative to a benchmark. 
+    A positive alpha indicates that the financial instrument has outperformed 
     the benchmark, while a negative alpha suggests underperformance.
 
     #### Parameters:
-    - history (pd.Series): Time series data representing the historical performance of the history.
+    - asset (pd.Series): Time series data representing the historical performance of the history.
     - benchmark (pd.Series): Time series data representing the historical performance of the benchmark.
 
     #### Returns:
     - float: Alpha, representing the excess return of the history over the benchmark.
     """
-    if isinstance(history, pd.DataFrame):
-        history['Benchmark'] = benchmark
-        history = history.dropna()
-        returns = (history.iloc[-1] - history.iloc[0]) / history.iloc[0]
-        alpha = returns.iloc[:-1] - returns.iloc[-1]
-    else:
-        history_return = (history.iloc[-1] - history.iloc[0]) / history.iloc[0]
-        benchmark_return = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
-        alpha = history_return - benchmark_return
-    return alpha
+    asset = asset.dropna()
+    benchmark = benchmark.dropna()
 
+    asset_returns = (asset.iloc[-1] - asset.iloc[0]) / asset.iloc[0]
+    benchmark_returns = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
+    return asset_returns - benchmark_returns
 
-def sharpe(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
+def omega(asset: pd.Series, threshold: float = 0.0) -> float:
     """
     #### Description:
-    Calculate the Sharpe Ratio for a given financial instrument based on its historical performance.
+    Calculate the Omega ratio of a financial instrument over the given history.
+    The Omega ratio is the probability-weighted ratio of returns above a threshold
+    to returns below that threshold.
+
+    #### Parameters:
+    - history (pd.Series): Time series data representing historical prices or returns.
+    - threshold (float, optional): Minimum acceptable return (MAR). Default is 0.0.
+
+    #### Returns:
+    - float: Omega ratio value.
+    """
+    returns = asset.dropna().pct_change().dropna()
+
+    # Excess returns above and below the threshold
+    gains = (returns - threshold).clip(lower=0).sum()
+    losses = (threshold - returns).clip(lower=0).sum()
+
+    # Avoid division by zero
+    if losses == 0:
+        return float('inf')
+
+    return gains / losses
+
+def tracking_error(asset: pd.Series, benchmark: pd.Series, timeperiod: int = 252) -> float:
+    """
+    #### Description:
+    Calculate the tracking error between a financial instrument and its benchmark over a specified time period.
+    Tracking error measures the standard deviation of the difference in returns.
+
+    #### Parameters:
+    - asset (pd.Series): Historical prices or returns of the portfolio.
+    - benchmark (pd.Series): Historical prices or returns of the benchmark.
+    - timeperiod (int, optional): Number of periods to annualize the tracking error. Default is 252.
+
+    #### Returns:
+    - float: Annualized tracking error.
+    """
+    asset_returns = asset.dropna().pct_change().dropna()
+    benchmark_returns = benchmark.dropna().pct_change().dropna()
+
+    # Align dates
+    returns_diff = asset_returns.align(benchmark_returns, join='inner')[0] - benchmark_returns
+
+    return returns_diff.std() * (timeperiod ** 0.5)
+
+def information_ratio(asset: pd.Series, benchmark: pd.Series, timeperiod: int = 252) -> float:
+    """
+    #### Description:
+    Calculate the Information Ratio between a financial instrument and its benchmark.
+    The Information Ratio measures the active return per unit of active risk (tracking error).
+
+    #### Parameters:
+    - asset (pd.Series): Historical prices or returns of the asset.
+    - benchmark (pd.Series): Historical prices or returns of the benchmark.
+    - timeperiod (int, optional): Number of periods to annualize the return. Default is 252.
+
+    #### Returns:
+    - float: Information Ratio.
+    """
+    asset_returns = asset.pct_change().dropna()
+    benchmark_returns = benchmark.pct_change().dropna()
+
+    # Align dates
+    asset_returns, benchmark_returns = asset_returns.align(benchmark_returns, join='inner')
+
+    active_return = asset_returns - benchmark_returns
+    tracking_err = active_return.std() * (timeperiod ** 0.5)
+
+    if tracking_err == 0:
+        return 1.0
+
+    annualized_active_return = active_return.mean() * timeperiod
+    return annualized_active_return / tracking_err
+
+
+def sharpe(asset: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
+    """
+    #### Description:
+    Calculate the Sharpe Ratio for a financial instrument based on its historical performance.
     The Sharpe Ratio helps assess the investment's return per unit of risk taken.
 
     #### Parameters:
-    - history (pd.Series): Historical price or return data of the financial instrument.
+    - asset (pd.Series): Historical price or return data of the asset.
     - riskfree (float): The risk-free rate of return, typically representing the return on a risk-free investment.
     - timeperiod (int, optional): The time period used for calculating average return and volatility. Default is 252.
 
@@ -204,20 +239,20 @@ def sharpe(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     - float: The Sharpe Ratio, a measure of the instrument's risk-adjusted performance.
     """
     # Calculate average return and volatility using helper functions
-    returns = theta(history=history, timeperiod=timeperiod)
-    volatility = sigma(history=history, timeperiod=timeperiod)
+    returns = theta(asset=asset, timeperiod=timeperiod)
+    volatility = sigma(asset=asset, timeperiod=timeperiod)
     
     # Calculate Sharpe Ratio using the formula
     return (returns - riskfree) / volatility
 
-def calmar(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
+def calmar(asset: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     """
     #### Description:
     Calculate the Calmar Ratio for a given financial instrument based on its historical performance.
     The Calmar ratio uses a financial instrument's maximum drawdown as its sole measure of risk
 
     #### Parameters:
-    - history (pd.Series): Historical price or return data of the financial instrument.
+    - asset (pd.Series): Historical price or return data of the financial instrument.
     - riskfree (float): The risk-free rate of return, typically representing the return on a risk-free investment.
     - timeperiod (int, optional): The time period used for calculating average return and volatility. Default is 252.
 
@@ -225,26 +260,14 @@ def calmar(history: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     - float: The Calmar Ratio, a measure of the instrument's risk-adjusted performance.
     """
     # Calculate average return and max drawdown using helper functions
-    returns = theta(history=history, timeperiod=timeperiod)
-    maxdrawdown = max_drawdown(history=history)
+    returns = theta(asset=asset, timeperiod=timeperiod)
+    maxdrawdown = max_drawdown(asset=asset)
     
-    if isinstance(history, pd.Series):
-        if abs(maxdrawdown) != 0:
-            # Calculate Calmar Ratio using the formula
-            return (returns - riskfree) / abs(maxdrawdown)
-        else:
-            return np.nan
-    elif isinstance(history, pd.DataFrame):
-        calmar_ratios = pd.Series(index=history.columns)
-        for column in history.columns:
-            column_returns = theta(history[column], timeperiod)
-            column_drawdown = max_drawdown(history[column])
-            if abs(column_drawdown) != 0:
-                # Calculate Calmar Ratio for each column in the DataFrame
-                calmar_ratios[column] = (column_returns - riskfree) / abs(column_drawdown)
-            else:
-                calmar_ratios[column] = np.nan
-        return calmar_ratios
+    if abs(maxdrawdown) != 0:
+        # Calculate Calmar Ratio using the formula
+        return (returns - riskfree) / abs(maxdrawdown)
+    else:
+        return 1.0
 
 def indexing(data: pd.Series, base: int = 100, weight: pd.Series = None) -> pd.Series:
     """
@@ -271,14 +294,14 @@ def indexing(data: pd.Series, base: int = 100, weight: pd.Series = None) -> pd.S
         indexed_data = (indexed_data * weight).sum(axis=1)
     return indexed_data
 
-def historical_var(history, freq: str = 'B', conf_level: float = 0.05) -> float:
+def historical_var(asset, freq: str = 'B', conf_level: float = 0.05) -> float:
     """
     #### Description:
     Calculate the Value at Risk (VaR) for a given financial instrument based on its historical performance.
     VaR measures the maximum potential loss at a specified confidence level over a given time horizon.
 
     #### Parameters:
-    - history (pd.Series or pd.DataFrame): Historical price or return data of the financial instrument.
+    - asset (pd.Series or pd.DataFrame): Historical price or return data of the financial instrument.
     - freq (str): The frequency of the data, e.g., 'D' for daily, 'M' for monthly.
     - conf_level (float): The confidence level for VaR calculation, typically between 0 and 1.
 
@@ -286,24 +309,19 @@ def historical_var(history, freq: str = 'B', conf_level: float = 0.05) -> float:
     - float: The Value at Risk (VaR), representing the maximum potential loss at the specified confidence level.
     """
     # Resample the historical data based on the specified frequency
-    resampled_history = history.resample(freq).ffill()
+    resampled_history = asset.resample(freq).ffill()
 
     # Calculate the percentage change and drop any NaN values
     returns = resampled_history.pct_change().dropna()
 
     # Calculate VaR at the specified confidence level
-    if isinstance(returns, pd.Series):
-        sorted_returns = returns.dropna().sort_values()
-        var = sorted_returns.iloc[round(len(sorted_returns) * conf_level)]
-    elif isinstance(returns, pd.DataFrame):
-        var = pd.Series(index=returns.columns)
-        for ticker in returns.columns:
-            data = returns[ticker].dropna().sort_values()
-            var[ticker] = data.iloc[round(len(data) * conf_level)]
+    sorted_returns = returns.dropna().sort_values()
+    var = sorted_returns.iloc[round(len(sorted_returns) * conf_level)]
 
     return abs(var)
 
-def momentum(history: pd.Series, period: int, differential: str ='last', method: str ='normal') -> pd.Series:
+
+def momentum(asset: pd.Series, period: int, differential: str ='last', method: str ='normal') -> pd.Series:
     """
     #### Description:
     Calculates the momentum of a time series data over a specified period.
@@ -312,7 +330,7 @@ def momentum(history: pd.Series, period: int, differential: str ='last', method:
     It is commonly used by traders and analysts to identify trends and potential buying or selling signals.
 
     #### Parameters:
-    - history (pd.Series or pd.DataFrame): Time series data representing the price or value of a security.
+    - asset (pd.Series or pd.DataFrame): Time series data representing the price or value of a security.
     - period (int): The number of data points over which momentum is calculated.
     - differential (str, default='last'): Determines how the reference value is calculated within the period.
         - 'last': Uses the last value within the rolling window as the reference value.
@@ -327,12 +345,12 @@ def momentum(history: pd.Series, period: int, differential: str ='last', method:
     """
     # Calculate the reference values based on the selected method
     if differential == 'last':
-        ctx = history.rolling(window=period).apply(lambda x: x[0], raw=True).dropna()
+        ctx = asset.rolling(window=period).apply(lambda x: x[0], raw=True).dropna()
     elif differential == 'mean':
-        ctx = history.rolling(window=period).mean().dropna()
+        ctx = asset.rolling(window=period).mean().dropna()
 
     # Reindex the original history to align with the reference values
-    ct = history.reindex(ctx.index)
+    ct = asset.reindex(ctx.index)
 
     # Calculate momentum based on the selected method
     if method == 'normal':
@@ -341,7 +359,7 @@ def momentum(history: pd.Series, period: int, differential: str ='last', method:
         mo = 100 * ct / ctx
     elif method == 'roclog':
         mo = 100 * np.log(np.array(ct / ctx))
-        mo = pd.Series(mo, index=history.index[-len(ct):])
+        mo = pd.Series(mo, index=asset.index[-len(ct):])
     return mo
 
 def gbm_multi(n_step: int, n_scenario: int, mu: pd.Series, sigma: pd.Series, corr_matrix: pd.DataFrame, p_0: float, allocation: pd.Series) -> np.ndarray:
@@ -408,15 +426,15 @@ def gbm_multi(n_step: int, n_scenario: int, mu: pd.Series, sigma: pd.Series, cor
     # Sum across assets to get total portfolio value
     return portfolio.sum(axis=2)
 
-def relative_volatility_contribution(history: pd.DataFrame, weights: pd.Series) -> pd.Series:
+def relative_volatility_contribution(asset: pd.DataFrame, weight: pd.Series) -> pd.Series:
     """
     Calculate the relative contribution of each asset to the total portfolio volatility.
 
     Parameters
     ----------
-    history : pd.DataFrame
+    asset : pd.DataFrame
         Time series of asset prices (columns = asset names, rows = dates).
-    weights : pd.Series
+    weight : pd.Series
         Portfolio weights (index = asset names).
 
     Returns
@@ -425,17 +443,17 @@ def relative_volatility_contribution(history: pd.DataFrame, weights: pd.Series) 
         Relative contribution of each asset to total portfolio volatility (sum = 1.0).
     """
     # Calculate returns
-    returns = history.pct_change().dropna()
+    returns = asset.pct_change().dropna()
     
     # Covariance matrix
     cov_matrix = returns.cov()
 
     # Total portfolio volatility
-    port_vol = np.sqrt(weights.T @ cov_matrix @ weights)
+    port_vol = np.sqrt(weight.T @ cov_matrix @ weight)
 
     # Absolute contribution to volatility
-    marginal_contrib = cov_matrix @ weights / port_vol
-    contrib_abs = weights * marginal_contrib
+    marginal_contrib = cov_matrix @ weight / port_vol
+    contrib_abs = weight * marginal_contrib
 
     # Relative contribution
     cvr = contrib_abs / port_vol
@@ -443,16 +461,16 @@ def relative_volatility_contribution(history: pd.DataFrame, weights: pd.Series) 
 
     return cvr
 
-def marginal_contribution_to_risk(history: pd.DataFrame, weights: pd.Series) -> pd.Series:
+def marginal_contribution_to_risk(asset: pd.DataFrame, weight: pd.Series) -> pd.Series:
     """
     Calculate the marginal contribution to risk (MCR) of each asset in a portfolio.
 
     Parameters
     ----------
-    history : pd.DataFrame
+    asset : pd.DataFrame
         Time series of asset prices or NAVs (columns = asset names, rows = dates).
-    weights : pd.Series
-        Portfolio weights (index = asset names, same names as columns of `history`).
+    weight : pd.Series
+        Portfolio weights (index = asset names, same names as columns of `asset`).
 
     Returns
     -------
@@ -460,16 +478,16 @@ def marginal_contribution_to_risk(history: pd.DataFrame, weights: pd.Series) -> 
         Marginal contribution to risk (MCR) of each asset (same unit as volatility, does not sum to 1).
     """
     # Calculate returns
-    returns = history.pct_change().dropna()
+    returns = asset.pct_change().dropna()
 
     # Covariance matrix
     cov_matrix = returns.cov()
 
     # Total portfolio volatility
-    port_vol = np.sqrt(weights.T @ cov_matrix @ weights)
+    port_vol = np.sqrt(weight.T @ cov_matrix @ weight)
 
     # MCR = (Σ w)_i / σ_p
-    mcr = cov_matrix @ weights / port_vol
+    mcr = cov_matrix @ weight / port_vol
     mcr.name = 'marginal_contribution_to_risk'
 
     return mcr
