@@ -56,6 +56,7 @@ def theta(asset: pd.Series, timeperiod: int = 252) -> float:
     returns = asset.pct_change().dropna()
     return (1 + returns).prod() ** (timeperiod / len(returns)) - 1
 
+
 def sigma(asset: pd.Series, timeperiod: int = 252) -> float:
     """
     #### Description:
@@ -70,6 +71,7 @@ def sigma(asset: pd.Series, timeperiod: int = 252) -> float:
     """
     returns = asset.pct_change().dropna()
     return returns.std() * np.sqrt(timeperiod)
+
 
 def max_drawdown(asset: pd.Series) -> float:
     """
@@ -92,6 +94,7 @@ def max_drawdown(asset: pd.Series) -> float:
 
     # Return the maximum drawdown
     return drawdowns.min()
+
 
 def jensen_alpha(asset: pd.Series, benchmark: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     """
@@ -146,6 +149,7 @@ def alpha(asset: pd.Series, benchmark: pd.Series) -> float:
     benchmark_returns = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
     return asset_returns - benchmark_returns
 
+
 def omega(asset: pd.Series, threshold: float = 0.0) -> float:
     """
     #### Description:
@@ -172,6 +176,7 @@ def omega(asset: pd.Series, threshold: float = 0.0) -> float:
 
     return gains / losses
 
+
 def tracking_error(asset: pd.Series, benchmark: pd.Series, timeperiod: int = 252) -> float:
     """
     #### Description:
@@ -193,6 +198,7 @@ def tracking_error(asset: pd.Series, benchmark: pd.Series, timeperiod: int = 252
     returns_diff = asset_returns.align(benchmark_returns, join='inner')[0] - benchmark_returns
 
     return returns_diff.std() * (timeperiod ** 0.5)
+
 
 def information_ratio(asset: pd.Series, benchmark: pd.Series, timeperiod: int = 252) -> float:
     """
@@ -245,6 +251,7 @@ def sharpe(asset: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     # Calculate Sharpe Ratio using the formula
     return (returns - riskfree) / volatility
 
+
 def calmar(asset: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
     """
     #### Description:
@@ -268,6 +275,37 @@ def calmar(asset: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
         return (returns - riskfree) / abs(maxdrawdown)
     else:
         return 1.0
+
+
+def sortino(asset: pd.Series, riskfree: float, timeperiod: int = 252) -> float:
+    """
+    #### Description:
+    Calculate the Sortino Ratio for a financial instrument based on its historical performance.
+    The Sortino Ratio measures the return per unit of downside risk, focusing only on negative volatility.
+
+    #### Parameters:
+    - asset (pd.Series): Historical price or return data of the asset.
+    - riskfree (float): The risk-free rate of return, typically representing the return on a risk-free investment.
+    - timeperiod (int, optional): The time period used for calculating average return and downside deviation. Default is 252.
+
+    #### Returns:
+    - float: The Sortino Ratio, a measure of risk-adjusted performance considering only downside risk.
+    """
+    # Calculate average return
+    returns = theta(asset=asset, timeperiod=timeperiod)
+
+    # Calculate downside deviation (only negative returns relative to risk-free rate)
+    daily_returns = asset.pct_change().dropna()
+    downside_returns = daily_returns[daily_returns < riskfree / timeperiod]
+    downside_deviation = ( ( (downside_returns - riskfree / timeperiod) ** 2 ).mean() ** 0.5 ) * (timeperiod ** 0.5)
+
+    # Avoid division by zero
+    if downside_deviation == 0:
+        return float('inf')
+
+    # Calculate Sortino Ratio
+    return (returns - riskfree) / downside_deviation
+
 
 def indexing(data: pd.Series, base: int = 100, weight: pd.Series = None) -> pd.Series:
     """
@@ -293,6 +331,7 @@ def indexing(data: pd.Series, base: int = 100, weight: pd.Series = None) -> pd.S
     if isinstance(weight, pd.Series):
         indexed_data = (indexed_data * weight).sum(axis=1)
     return indexed_data
+
 
 def historical_var(asset, freq: str = 'B', conf_level: float = 0.05) -> float:
     """
@@ -362,6 +401,7 @@ def momentum(asset: pd.Series, period: int, differential: str ='last', method: s
         mo = pd.Series(mo, index=asset.index[-len(ct):])
     return mo
 
+
 def gbm_multi(n_step: int, n_scenario: int, mu: pd.Series, sigma: pd.Series, corr_matrix: pd.DataFrame, p_0: float, allocation: pd.Series) -> np.ndarray:
     """
     Simulates a multi-asset Geometric Brownian Motion (GBM) for a portfolio.
@@ -426,6 +466,7 @@ def gbm_multi(n_step: int, n_scenario: int, mu: pd.Series, sigma: pd.Series, cor
     # Sum across assets to get total portfolio value
     return portfolio.sum(axis=2)
 
+
 def relative_volatility_contribution(asset: pd.DataFrame, weight: pd.Series) -> pd.Series:
     """
     Calculate the relative contribution of each asset to the total portfolio volatility.
@@ -461,6 +502,7 @@ def relative_volatility_contribution(asset: pd.DataFrame, weight: pd.Series) -> 
 
     return cvr
 
+
 def marginal_contribution_to_risk(asset: pd.DataFrame, weight: pd.Series) -> pd.Series:
     """
     Calculate the marginal contribution to risk (MCR) of each asset in a portfolio.
@@ -491,3 +533,66 @@ def marginal_contribution_to_risk(asset: pd.DataFrame, weight: pd.Series) -> pd.
     mcr.name = 'marginal_contribution_to_risk'
 
     return mcr
+
+def upside_capture(asset: pd.Series, benchmark: pd.Series, timeperiod: int = 252) -> float:
+    """
+    #### Description:
+    Calculate the Upside Capture Ratio of an asset relative to a benchmark.
+    The Upside Capture Ratio measures how well the asset performs relative to the benchmark
+    during periods when the benchmark has positive returns.
+
+    #### Parameters:
+    - asset (pd.Series): Historical price or return data of the asset.
+    - benchmark (pd.Series): Historical price or return data of the benchmark.
+    - timeperiod (int, optional): The number of periods per year for annualization. Default is 252.
+
+    #### Returns:
+    - float: Upside Capture Ratio.
+    """
+    asset_returns = asset.pct_change().dropna()
+    benchmark_returns = benchmark.pct_change().dropna()
+
+    # Align series on dates
+    asset_returns, benchmark_returns = asset_returns.align(benchmark_returns, join='inner')
+
+    # Filter periods when benchmark return is positive
+    positive_mask = benchmark_returns > 0
+    asset_positive = asset_returns[positive_mask]
+    benchmark_positive = benchmark_returns[positive_mask]
+
+    if benchmark_positive.mean() == 0:
+        return float('inf')
+
+    return (asset_positive.mean() * timeperiod) / (benchmark_positive.mean() * timeperiod)
+
+
+def downside_capture(asset: pd.Series, benchmark: pd.Series, timeperiod: int = 252) -> float:
+    """
+    #### Description:
+    Calculate the Downside Capture Ratio of a financial instrument relative to a benchmark.
+    The Downside Capture Ratio measures how well the asset performs relative to the benchmark
+    during periods when the benchmark has negative returns.
+
+    #### Parameters:
+    - asset (pd.Series): Historical price or return data of the asset.
+    - benchmark (pd.Series): Historical price or return data of the benchmark.
+    - timeperiod (int, optional): The number of periods per year for annualization. Default is 252.
+
+    #### Returns:
+    - float: Downside Capture Ratio.
+    """
+    asset_returns = asset.pct_change().dropna()
+    benchmark_returns = benchmark.pct_change().dropna()
+
+    # Align series on dates
+    asset_returns, benchmark_returns = asset_returns.align(benchmark_returns, join='inner')
+
+    # Filter periods when benchmark return is negative
+    negative_mask = benchmark_returns < 0
+    asset_negative = asset_returns[negative_mask]
+    benchmark_negative = benchmark_returns[negative_mask]
+
+    if benchmark_negative.mean() == 0:
+        return float('inf')
+
+    return (asset_negative.mean() * timeperiod) / (benchmark_negative.mean() * timeperiod)
