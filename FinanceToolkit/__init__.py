@@ -19,5 +19,5 @@ from .AssetManagement import (
     relative_volatility_contribution,
     marginal_contribution_to_risk,
     upside_capture,
-    downside_capture
+    downside_capture,
 )

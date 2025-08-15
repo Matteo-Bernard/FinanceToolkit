@@ -145,8 +145,8 @@ def alpha(asset: pd.Series, benchmark: pd.Series) -> float:
     asset = asset.dropna()
     benchmark = benchmark.dropna()
 
-    asset_returns = (asset.iloc[-1] - asset.iloc[0]) / asset.iloc[0]
-    benchmark_returns = (benchmark.iloc[-1] - benchmark.iloc[0]) / benchmark.iloc[0]
+    asset_returns = (asset[-1] - asset[0]) / asset[0]
+    benchmark_returns = (benchmark[-1] - benchmark[0]) / benchmark[0]
     return asset_returns - benchmark_returns
 
 
